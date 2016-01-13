@@ -1,0 +1,415 @@
+// HostNetRelease.cpp : Defines the entry point for the console application.
+//
+// hostnet.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+#include <iostream>
+#include <Windows.h>
+#include <string>
+#include<sstream>
+#include <algorithm>
+#include <bitset>
+#include <stdlib.h>
+#include <vector>
+#include <iterator>
+using namespace std;
+HANDLE hSTDOut = GetStdHandle(STD_OUTPUT_HANDLE);
+class Exeption {
+
+};
+
+class WrongDotCounter {
+private :
+    int dotCounter;
+    string func;
+public:
+    WrongDotCounter(int i,string s) :dotCounter(i),func(s) 
+    {
+       }
+
+    void what()
+        {
+            SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED);
+            cerr << "Occured Exeption infunction '" << 
+                func << "' quantity of dots '" << dotCounter << "'\n";
+            SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        }
+};
+
+class BigNumber :public Exeption
+{
+private :
+    int number;
+    string message;
+public:
+    BigNumber(string m, int n) :
+        message(m), number(n) {};
+
+    void what()
+    {
+        SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_INTENSITY|BACKGROUND_RED);
+        cerr << message << " " << number<<endl;
+        SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    }
+};
+
+vector<bitset<8>> stringToVectorBitset(string ip)
+{
+
+    //cout << "\n//////test of myConvert{" << endl;
+
+    int dotCounter = 0;
+    //check quantity if the dots
+    for (int i = 0;i < ip.length();i++)
+    {
+        if (ip[i] == '.') dotCounter++;
+    }
+
+        if (dotCounter != 3) {
+      
+            throw WrongDotCounter(dotCounter, "stringToVectorBitset");
+        }
+
+        char arr1[4];
+        char arr2[4];
+        char arr3[4];
+        char arr4[4];
+
+   // cout << ip;
+
+    int counter = 0, arrcounter = 0;
+
+    //перывй справа октет
+        while (ip[counter] != '.')
+        {
+            arr1[arrcounter++] = ip[counter++];
+        }
+          int buf1 = stoi(arr1, nullptr, 10);
+          if (buf1 > 255) throw BigNumber(" Error of first octet number is", buf1);
+         bitset <8> octet1 = buf1;
+         
+      ///// второй справа октет
+        arrcounter = 0; counter++;
+        while (ip[counter] != '.')
+        {
+            arr2[arrcounter++] = ip[counter++];
+        }
+            int buf2 = stoi(arr2, nullptr, 10);
+            if (buf2 > 255) throw BigNumber(" Error of second octet number is", buf2);
+              bitset <8 > octet2 = buf2;
+   /////////// конец второго окета
+
+        //третий октет
+        arrcounter = 0; counter++;
+        while (ip[counter] != '.')
+        {
+            arr3[arrcounter++] = ip[counter++];
+        }
+        int buf3 = stoi(arr3, nullptr, 10);
+        if (buf3 > 255) throw BigNumber(" Error of first third number is", buf3);
+         bitset <8 > octet3 = buf3;
+  /////////// конец третьего окета
+
+    //четвертый октет октет
+        arrcounter = 0; counter++;
+        while (ip[counter] != '\0')
+        {
+            arr4[arrcounter++] = ip[counter++];
+        }
+              int buf4 = stoi(arr4, nullptr, 10);
+              if (buf4 > 255) throw BigNumber(" Error of fourth octet number is", buf4);
+              bitset <8 > octet4 = buf4;
+
+
+    vector <bitset<8>> IP;
+            IP.push_back(octet1);
+            IP.push_back(octet2);
+            IP.push_back(octet3);
+            IP.push_back(octet4);
+
+            SetConsoleTextAttribute(hSTDOut, FOREGROUND_GREEN|FOREGROUND_INTENSITY|BACKGROUND_GREEN);
+            cout << "OK" << endl;
+            SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    //cout << "}";
+    return IP;
+}
+
+string convertBitVecToString(vector<bitset<8>> obj)
+{
+    string retVal;
+    for (int i = 0;i < obj.size();i++)
+    {
+        int buf1 = obj[i].to_ulong();
+        char *buf = new char[4];
+
+     stringstream obj1;
+        string stringBuff;
+        obj1 << buf1;
+        obj1 >> stringBuff;
+        retVal.append(stringBuff);
+        retVal.append(".");
+
+    }
+    retVal.erase(retVal.end() - 1);
+    return retVal;
+}
+
+bool checkMask(string input)
+{
+    try {
+        string buf;
+        vector<bitset<8>> mask = stringToVectorBitset(input);
+
+        for (int i = 0;i < mask.size();i++)
+        {
+            int maxVal = 255, minVal = 0,buf;
+            buf = mask[i].to_ulong();
+            if (buf > maxVal || buf < minVal) return false;
+       }
+
+        for (auto a : mask)
+        {
+            buf.append(a.to_string());
+        }
+
+        int counter = 0;
+
+        while (buf[counter++] != '0');
+        --counter;
+
+        for (int i = counter;i < buf.length();i++)
+        {
+            if (buf[i] == '1') return false;
+        }
+    }
+
+    catch (...) {
+        return false;
+    }
+
+    SetConsoleTextAttribute(hSTDOut, FOREGROUND_GREEN | FOREGROUND_INTENSITY | BACKGROUND_GREEN);
+    cout << "CORRECT MASK" << endl;
+    SetConsoleTextAttribute(hSTDOut, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    return true;
+}
+
+int maskPrefix(string input)
+{
+   
+        
+            string buf;
+            vector<bitset<8>> mask = stringToVectorBitset(input);
+
+
+            for (auto a : mask)
+            {
+                buf.append(a.to_string());
+            }
+
+            int counter = 0;
+
+            while (buf[counter++] != '0');
+            counter--;
+
+        return counter;
+}
+
+string broadcastIP(vector<bitset<8>> ip, int Prefix)
+{
+    cout << endl;
+    for (auto a : ip)
+    {
+        cout << a << '.';
+    }
+    cout << endl;
+    int zeroCounter = 32 - Prefix;
+
+    bitset<8> b;
+    b = 255;
+    int vCounter = 0;
+    int bitCounter = 0;
+    for (int i = 0;i < zeroCounter;i++)
+    {
+        /*if (i == 7) { vCounter = 1; arrCounter = 0; }
+        if (i == 15) { vCounter = 2;arrCounter = 0; }
+        if (i == 23) { vCounter = 3;arrCounter = 0; }
+           
+        if (i == 28) { vCounter = 4; arrCounter = 0; }*/
+        if (i % 8 == 0 && i != 0) {
+            vCounter++; bitCounter=0;
+        }
+
+        ip[3-vCounter].flip(bitCounter);
+        bitCounter++;
+      
+    }
+    
+    for (auto a : ip)
+    {
+        cout << a << '.';
+    }
+    auto retVal = convertBitVecToString(ip);
+    return retVal;
+}
+
+int quantityAdressForHosts(int prefix)
+{
+    int n = 32 - prefix;
+
+    int quantityAdress= pow(2,n)-2;
+    return quantityAdress;
+
+}
+
+string lastCorrectAdress(vector<bitset<8>> ip, int Prefix)
+{
+    
+    int zeroCounter = 32 - Prefix;
+
+    bitset<8> b;
+    b = 255;
+    int vCounter = 0;
+    int bitCounter = 0;
+    for (int i = 0;i < zeroCounter;i++)
+    {
+        /*if (i == 7) { vCounter = 1; arrCounter = 0; }
+        if (i == 15) { vCounter = 2;arrCounter = 0; }
+        if (i == 23) { vCounter = 3;arrCounter = 0; }
+
+        if (i == 28) { vCounter = 4; arrCounter = 0; }*/
+        if (i % 8 == 0 && i != 0) {
+            vCounter++; bitCounter = 0;
+        }
+
+        ip[3 - vCounter].flip(bitCounter);
+        bitCounter++;
+
+    }
+
+    for (auto a : ip)
+    {
+        cout << a << '.';
+    }
+    auto retVal = convertBitVecToString(ip);
+    return retVal;
+}
+
+
+
+int main()
+{
+    string ip = "152.12.32.254";
+    string mask = "248.0.0.0";
+    //cout << "Enter IP: "; cin >> ip;
+    //cout << "Enter Mask: "; cin >> mask;
+    vector<bitset<8>> IP;
+    vector<bitset<8>> MASK;
+
+    cout << "\nMask check:   " << boolalpha << checkMask(mask);
+    cout << "Mask prefix: " << maskPrefix(mask);
+
+    try {
+       IP = stringToVectorBitset(ip);
+    }
+
+    catch (WrongDotCounter error)
+    {
+        error.what();
+        IP = stringToVectorBitset("0.0.0.0");
+    }
+    catch (BigNumber error)
+    {
+        error.what();
+        IP = stringToVectorBitset("0.0.0.0");
+    }
+    
+    try {
+        MASK = stringToVectorBitset(mask);
+    }
+
+    catch (WrongDotCounter error)
+    {
+        error.what();
+        MASK = stringToVectorBitset("0.0.0.0");
+    }
+
+
+    cout << "\nIP :\n";
+
+    copy(IP.begin(), IP.end(),ostream_iterator<bitset<8>>(cout, "."));
+
+
+    cout << "\nMASK :\n";
+    for (auto a : MASK)
+    {
+        cout << a << ".";
+    }
+    cout << endl;
+
+
+    vector<bitset<8>> inverceMask;
+    for (int i = 0;i < IP.size();i++)
+    {
+
+        inverceMask.push_back(~MASK[i]);
+    }
+
+   cout << "inverceMask:\n{";
+   for (int i = 0;i < inverceMask.size();i++)
+   {
+
+       cout << inverceMask[i]<<'.';
+
+   }
+   cout << endl << convertBitVecToString(inverceMask) << "}\n";
+
+    vector<bitset<8>> hostID;
+    vector<bitset<8>> networkID;
+
+    for (int i = 0;i < IP.size();i++)
+    {
+
+        networkID.push_back(IP[i] & MASK[i]);
+        hostID.push_back(IP[i] & ~MASK[i]);
+
+    }
+
+    cout << "\nnetwork id: " << endl;
+    for (auto a : networkID)
+    {
+        cout << a << ".";
+    }
+
+
+    cout << "\nhost id: " << endl;
+    for (auto a : hostID)
+    {
+        cout << a << ".";
+    }
+
+    string NETWORKID = convertBitVecToString(networkID);
+
+    cout << "\nResult is :\n" << "NetworkId:     " << NETWORKID << endl;
+    
+    string HOSTID = convertBitVecToString(hostID);
+    cout << "HostID:        " << HOSTID;
+
+  
+
+   cout << "\nBroadcast: "<< broadcastIP(networkID, maskPrefix(mask));
+
+   cout << "Quantity of adresess " << quantityAdressForHosts(maskPrefix(mask));
+
+   networkID[3].operator|=(1);
+   cout << "\nFirst correct IP: "<<convertBitVecToString(networkID);
+  
+   cout << "\nLast correct: " << lastCorrectAdress(networkID,maskPrefix(mask));
+  
+   
+   cout << endl;
+}
+
+
+//buf = stoi(ip, nullptr, 10);
+
